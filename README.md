@@ -61,7 +61,10 @@ chromacraft doesn't just generate pretty colors, it applies behavioral psycholog
 2. create a `.env` file in the root directory:
    ```
    XAI_API_KEY=your_xai_api_key_here
+   AUTH_TOKEN=some_long_random_password
    ```
+
+   `AUTH_TOKEN` gates AI generation. it is required: when it is unset the endpoint denies every request (fail closed), so local dev needs it too. pick a long random value, e.g. `openssl rand -hex 24`. the first time you use generation in a browser you enter this same value once via the "Have access?" unlock link, and it is stored in that browser's localStorage.
 
 3. start the dev server with vercel cli (this runs both the frontend and api routes):
    ```
@@ -87,7 +90,7 @@ for example, Groq's free tier: `AI_BASE_URL=https://api.groq.com/openai/v1`, `AI
 
 ### deploying to vercel
 
-add `XAI_API_KEY` (or `AI_API_KEY`) as an environment variable in your project settings under settings > environment variables, enabled for production, preview, and development.
+add `XAI_API_KEY` (or `AI_API_KEY`) and `AUTH_TOKEN` as environment variables in your project settings under settings > environment variables, enabled for production, preview, and development. without `AUTH_TOKEN` set, generation is denied for everyone (fail closed). after deploying, unlock generation once per browser via the "Have access?" link using the `AUTH_TOKEN` value.
 
 `vercel.json` sets `maxDuration: 60` for the function so the retry path is not killed mid-flight. if your plan caps functions at 10s, lower the per-request timeout in `api/_lib/client.ts` accordingly.
 
@@ -103,10 +106,10 @@ npm run build   # tsc typecheck + vite build
 being honest about what is and isn't protected here:
 
 - **the provider key is server-side only.** it lives in `api/` functions, read from `XAI_API_KEY`/`AI_API_KEY`, and is never sent to the browser. there is no `VITE_`-prefixed key anywhere; do not add one (vite would bake it into the public bundle).
-- **the endpoint is unauthenticated.** there is no login. same-origin is not a real control: `curl`/bots can still call `/api/generate-palette` and spend credits. the mitigations are the 500-character input cap, the per-ip rate limit, the model `max_tokens` cap, and a request timeout.
+- **the endpoint is gated by a single shared token, not real accounts.** generation requires `Authorization: Bearer <AUTH_TOKEN>`; the server compares a sha256 of the candidate against a sha256 of the configured token with `crypto.timingSafeEqual`. this is a personal on/off switch, not multi-user auth: anyone Filip gives the token to (or who reads his browser's localStorage) can generate. it fails closed - if `AUTH_TOKEN` is unset the endpoint denies everyone. the rate limit runs before the auth check so token guessing is throttled to 10 attempts / 10 min / ip. other abuse mitigations still apply: the 500-character input cap, the model `max_tokens` cap, and a request timeout.
 - **the rate limit is best-effort.** it is an in-memory fixed window (10 requests / 10 minutes per ip) that lives per warm instance: it resets on cold start and does not coordinate across instances. good enough for a personal tool; the follow-up if abuse ever appears is Upstash / Vercel KV. **set a spend cap in the xai console as the real backstop.**
 - **prompt injection is contained, not prevented.** the user description is wrapped in `<user_description>` tags and treated as untrusted data, but the actual protection is that output is schema-constrained, deterministically re-validated with color math, and the model's free text is never returned to the client.
-- **old leaked keys are revoked and intentionally left in git history.** earlier commits baked a client-side gemini key into the bundle and briefly committed key files; those keys are dead. history was not rewritten. when deploying, remove any stale `GEMINI_API_KEY` / `OPENAI_API_KEY` / `API_KEY` variables from the Vercel project env so nothing unused lingers.
+- **old leaked keys are revoked and intentionally left in git history.** an earlier AI provider's key was baked into the client bundle and some key files were briefly committed; those keys are dead. history was not rewritten. when deploying, delete any env var that isn't `XAI_API_KEY` (and now `AUTH_TOKEN`) from the Vercel project so nothing unused lingers.
 
 ## tech stack
 

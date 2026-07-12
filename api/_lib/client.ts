@@ -1,7 +1,7 @@
 // AI provider client. default is xAI (grok-4.20-0309-non-reasoning) over the OpenAI-compatible
 // endpoint, so the already-installed openai SDK works with only a baseURL swap.
 // AI_BASE_URL / AI_MODEL / AI_API_KEY let a different OpenAI-compatible provider
-// (Groq, Gemini compat, etc.) drop in without code changes.
+// (Groq, or any OpenAI-compatible endpoint) drop in without code changes.
 
 import OpenAI from 'openai';
 

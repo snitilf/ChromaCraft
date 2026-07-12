@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { generatePalette } from '../services/ai';
+import { generatePalette, setAuthToken, UnauthorizedError } from '../services/ai';
 import { Palette } from '../types';
 import { Sparkles, Loader2, CornerDownLeft } from 'lucide-react';
 
@@ -11,22 +11,39 @@ export const AIInput: React.FC<AIInputProps> = ({ onPaletteGenerated }) => {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [keyValue, setKeyValue] = useState('');
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setLoading(true);
     setError(null);
+    setIsUnauthorized(false);
     try {
       const palette = await generatePalette(prompt);
       onPaletteGenerated(palette);
       setPrompt(''); // Clear input on success
+      setShowKeyInput(false);
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to generate palette. Please try again.";
-      setError(errorMessage);
+      if (error instanceof UnauthorizedError) {
+        setIsUnauthorized(true);
+        setError(error.message);
+      } else {
+        setError(error instanceof Error ? error.message : "Failed to generate palette. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveKey = () => {
+    if (!keyValue) return;
+    setAuthToken(keyValue);
+    setShowKeyInput(false);
+    setKeyValue('');
+    handleGenerate(); // retry the pending generation with the new token
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -46,6 +63,8 @@ export const AIInput: React.FC<AIInputProps> = ({ onPaletteGenerated }) => {
             onChange={(e) => {
               setPrompt(e.target.value);
               setError(null); // Clear error when user types
+              setIsUnauthorized(false);
+              setShowKeyInput(false);
             }}
             onKeyDown={handleKeyDown}
             maxLength={500}
@@ -77,6 +96,41 @@ export const AIInput: React.FC<AIInputProps> = ({ onPaletteGenerated }) => {
       {error && (
         <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
           {error}
+          {isUnauthorized && !showKeyInput && (
+            <button
+              type="button"
+              onClick={() => setShowKeyInput(true)}
+              className="ml-2 underline font-medium hover:text-red-700"
+            >
+              Have access?
+            </button>
+          )}
+        </div>
+      )}
+      {isUnauthorized && showKeyInput && (
+        <div className="flex items-center gap-2">
+          <input
+            type="password"
+            value={keyValue}
+            onChange={(e) => setKeyValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSaveKey();
+              }
+            }}
+            placeholder="Access password"
+            className="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-200 outline-none focus:border-slate-400"
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={handleSaveKey}
+            disabled={!keyValue}
+            className="text-xs px-3 py-2 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save
+          </button>
         </div>
       )}
     </div>

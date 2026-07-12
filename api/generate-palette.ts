@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkRateLimit } from './_lib/ratelimit.js';
+import { checkAuth } from './_lib/auth.js';
 import { runPipeline } from './_lib/pipeline.js';
 import { ConfigError } from './_lib/client.js';
 import { MAX_DESCRIPTION_LENGTH } from './_lib/prompt.js';
@@ -22,6 +23,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!rl.allowed) {
     res.setHeader('Retry-After', String(rl.retryAfterSec));
     return res.status(429).json({ error: 'Too many requests. Try again in a few minutes.' });
+  }
+
+  // rate limit runs first so token guessing is throttled to the per-ip window.
+  if (!checkAuth(req)) {
+    return res.status(401).json({
+      error: "Oops, Filip hasn't added you to the authorized users list.",
+    });
   }
 
   const body: unknown = req.body;

@@ -93,7 +93,7 @@ const App: React.FC = () => {
                   </h2>
                   <AIInput onPaletteGenerated={setPalette} />
                   <p className="text-xs text-slate-400 leading-relaxed px-1">
-                      Ask for "A cozy coffee shop morning" or "Corporate fintech dark mode". GPT-4o-mini generates a harmonious 5-color palette instantly.
+                      Ask for "A cozy coffee shop morning" or "Corporate fintech dark mode". AI generates a harmonious 5-color palette instantly.
                   </p>
               </div>
 
