@@ -3,6 +3,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  // Vite automatically exposes env variables prefixed with VITE_ to import.meta.env
-  // So VITE_API_KEY in .env will be available as import.meta.env.VITE_API_KEY
+  // only the frontend build lives here. secrets never go in client env: the AI
+  // provider key stays server-side in the api/ function, read from XAI_API_KEY.
 });

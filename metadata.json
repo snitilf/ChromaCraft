@@ -1,5 +1,5 @@
 {
   "name": "ChromaCraft",
-  "description": "A sophisticated color palette visualizer with Gemini AI generation, high-fidelity UI previews, and Tailwind export.",
+  "description": "A sophisticated color palette visualizer with AI generation, high-fidelity UI previews, and Tailwind export.",
   "requestFramePermissions": []
 }

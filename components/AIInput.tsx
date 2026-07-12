@@ -22,7 +22,7 @@ export const AIInput: React.FC<AIInputProps> = ({ onPaletteGenerated }) => {
       setPrompt(''); // Clear input on success
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to generate palette. Please check your API key and try again.";
+      const errorMessage = error instanceof Error ? error.message : "Failed to generate palette. Please try again.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -48,6 +48,7 @@ export const AIInput: React.FC<AIInputProps> = ({ onPaletteGenerated }) => {
               setError(null); // Clear error when user types
             }}
             onKeyDown={handleKeyDown}
+            maxLength={500}
             placeholder="Describe a vibe (e.g., 'Scandinavian forest morning' or 'Cyberpunk neon city')..."
             className="w-full p-4 bg-transparent border-none outline-none text-slate-700 placeholder-slate-400 text-sm resize-none min-h-[120px]"
             disabled={loading}
@@ -56,6 +57,7 @@ export const AIInput: React.FC<AIInputProps> = ({ onPaletteGenerated }) => {
             <div className="pl-2 text-slate-400 flex items-center gap-2">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-4 h-4 text-indigo-500" />}
               <span className="text-[10px] font-medium uppercase tracking-wide opacity-60 hidden sm:inline-block">AI Powered</span>
+              <span className="text-[10px] font-medium tabular-nums opacity-50">{prompt.length}/500</span>
             </div>
             <button
               onClick={handleGenerate}
